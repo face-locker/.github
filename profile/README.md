@@ -22,8 +22,6 @@ The system operates on a centralized control model (Kiosk):
 - **Master Unit (Raspberry Pi 4)**: Acts as the "brain" - processes video stream from webcam for facial recognition (AI FaceID), runs web server for mobile app communication via Internet, and manages locker allocation logic
 - **Slave Unit (ARM ESP32)**: Acts as the "executor" - receives commands from Raspberry Pi via UART protocol to control relays (unlock) and reads limit switch sensors (door monitoring), then sends feedback to Pi
 
-![System Architecture](architecture.png)
-
 ## 🔄 Business Process Flow
 
 ### Scenario 1: Check-in (Deposit Items)
@@ -35,8 +33,6 @@ The system operates on a centralized control model (Kiosk):
 5. ESP32 receives command → Activates corresponding relay → Solenoid lock opens
 6. User places items and closes door. Limit switch detects door closure → ESP32 sends signal to Pi → Pi updates locker status to "In Use" in database
 
-![Check-in Process](check-in.png)
-
 ### Scenario 2: Check-out (Retrieve Items)
 
 1. User selects "Retrieve" and authenticates via FaceID (or QR scan on app)
@@ -44,8 +40,6 @@ The system operates on a centralized control model (Kiosk):
 3. Pi sends unlock command for that specific compartment to ESP32
 4. Door opens, user retrieves items and closes door
 5. System updates locker status back to "Available" and archives/clears the transaction session
-
-![Check-out Process](check-out.png)
 
 ## 🛠️ Technical Components
 
@@ -94,10 +88,10 @@ The system operates on a centralized control model (Kiosk):
 
 ---
 
-<div align="center">
+  <div align="center">
 
 **PBL5 Project - Group 6**
 
 _Da Nang University of Science and Technology_
 
-</div>
+  </div>
