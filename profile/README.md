@@ -22,39 +22,42 @@ The master unit runs on a Raspberry Pi 4. This is where all the heavy lifting ha
 
 The slave unit is an ARM ESP32 board. It acts as the physical controller. It receives commands from the Raspberry Pi through UART, controls the relay modules to unlock doors, and reads the limit switch sensors to monitor door status. It then sends this feedback back to the Pi.
 
+![System Architecture](architecture.png)
+
 ### Check-in Process
 
 When a user wants to deposit items, they press the deposit button on the touchscreen or through the app. The system activates the camera and runs FaceID to capture the facial feature vector. The backend queries the database to find an available compartment. Once found, the Pi sends a UART packet with the locker ID and unlock command to the ESP32. The ESP32 activates the relay, which opens the solenoid lock. After the user places their items and closes the door, the limit switch detects the closure. The ESP32 sends a signal back to the Pi, which updates the database to mark that locker as in use.
+
+![Check-in Process](check-in.png)
 
 ### Check-out Process
 
 To retrieve items, the user selects the retrieve option and authenticates using FaceID or by scanning a QR code from the app. The system compares the data with what was stored during check-in. If it matches, the Pi sends the unlock command for that specific compartment to the ESP32. The door opens, the user takes their items and closes the door. The system then updates the locker status back to available and archives the session.
 
+![Check-out Process](check-out.png)
+
 ## User Stories
 
-The system covers several user stories:
+The following table summarizes all user stories for the system:
 
-For customers, US01 allows depositing items using AI FaceID. The camera scans the face, the Pi extracts the vector, the backend finds an empty locker, sends the unlock command via UART, the sensor confirms door closure, and the database updates to show the locker is in use.
-
-US02 provides an alternative authentication method through QR codes from the mobile app. The app creates a dynamic QR code, the camera decodes it on site, the Pi verifies the user through the API, and locker allocation proceeds the same way as FaceID.
-
-US03 lets users add more items to a locker they are already renting. They select the add items option, authenticate with FaceID or QR, and the system opens the same locker without ending the session.
-
-US04 handles checkout. The system verifies the face against the vector stored during check-in, sends the UART command to open the correct compartment, and updates the database to show the locker is available again.
-
-For administrators, US05 covers CRUD operations on lockers. Admins can add, edit, delete, or view the locker list through the dashboard, including changing compartment counts, locker IDs, or ESP32 GPIO pin configurations.
-
-US06 allows force opening a locker when needed. The admin selects the locker on the dashboard, the backend sends a priority command that bypasses normal authentication, and the Pi tells the ESP32 to activate the relay immediately.
-
-US07 lets admins disable malfunctioning lockers. The system changes the compartment status in the database to maintenance mode, so it will not be assigned to new customers.
-
-US08 provides usage charts and logs. The backend queries transaction history and the app displays usage frequency and real-time vacancy rates.
-
-US09 and US10 handle security. When the limit switch state changes without an unlock command, the ESP32 sends an urgent interrupt. The dashboard and app show a red alert. Additionally, the camera captures images and the Pi can run preliminary training or store face vectors for future recognition.
+| ID   | Feature Group | Actor    | User Story                                                 | Technical Details                                                                                                                                     |
+| ---- | ------------- | -------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| US01 | Check-in      | Customer | Deposit items quickly using AI FaceID                      | Camera scans face -> Pi extracts vector -> Backend finds empty locker -> UART unlock command -> Sensor confirms door closed -> DB updates to "In Use" |
+| US02 | Check-in      | Customer | Authenticate deposit using QR code from App                | App creates Dynamic QR -> Camera decodes on-site -> Pi verifies user via API -> Locker allocation same as FaceID                                      |
+| US03 | Usage         | Customer | Add more items to a rented locker (Update)                 | Select "Add Items" -> Authenticate with FaceID/QR -> System opens same locker without ending session                                                  |
+| US04 | Check-out     | Customer | Retrieve items safely with dual authentication (FaceID/QR) | Verify face -> Match with vector from check-in -> UART opens correct compartment -> DB updates to "Available"                                         |
+| US05 | Admin (CRUD)  | Admin    | CRUD: Add/Edit/Delete/View locker list                     | Dashboard operations -> Change compartment count, locker ID, or ESP32 GPIO pin config in DB                                                           |
+| US06 | Admin         | Admin    | Force open a specific locker                               | Admin selects locker on Dashboard -> Backend sends priority bypass command -> Pi tells ESP32 to activate relay immediately                            |
+| US07 | Admin         | Admin    | Disable a malfunctioning locker                            | Change compartment status in DB to "Maintenance" -> System will not assign to new customers                                                           |
+| US08 | Monitoring    | Admin    | View usage charts and logs                                 | Backend queries transaction history -> App displays usage frequency and real-time vacancy rates                                                       |
+| US09 | Security      | System   | Automatic alert on tampering/lock jam detection            | Limit switch state changes without unlock command -> ESP32 sends urgent interrupt -> Dashboard/App shows red alert                                    |
+| US10 | Registration  | Customer | Face registration for future recognition                   | Camera captures image -> Pi runs preliminary training (fine-tuning) or stores face vector in DB for later recognition                                 |
 
 ## Database Design
 
 The database consists of six main tables:
+
+![Database ERD](erd.png)
 
 The Users table stores user information including ID, email, password hash, full name, phone number, role (customer or admin), active status, and timestamps.
 
